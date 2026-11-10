@@ -423,7 +423,7 @@ footer .credit a{font-weight:600}
   "@context": "https://schema.org",
   "@type": "ScholarlyArticle",
   "headline": "Which pages should you review first? An early-warning queue for organic click decline",
-  "abstract": "A page-level model ranks organic content pages by their probability of losing search clicks the following month. Evaluated with clients held out and the label taken from a later month, the model reaches precision@50 of 0.82 (0.62-0.94 across five client-grouped draws) against 0.54 for the frozen rule baseline.",
+  "abstract": "FlyRank publishes content into client sites and then watches it decay. This paper asks which pages in a portfolio will lose organic search clicks next month, and what a person should do with them. On a pseudonymized production search warehouse (78.8 million daily rows, 101,441 pages, 43 clients), a page-level model reaches precision@50 of 0.82 (0.62-0.94 across five client-grouped draws) against 0.54 for a frozen hand-written rule on the identical split, with the label taken from the following month.",
   "author": {"@type": "Person", "name": "Louai Mohamed", "url": "https://github.com/Louai-Mohamed"},
   "datePublished": "2026-11-10",
   "inLanguage": "en",
@@ -492,11 +492,11 @@ footer .credit a{font-weight:600}
     <section class="abstract" id="abstract" aria-labelledby="abstract-h">
       <h2 id="abstract-h">Abstract</h2>
       <p>
-        <span class="sent"><strong>Question.</strong> When a portfolio holds more content pages than a team can review, which pages are most likely to lose organic search clicks next month — and what should a person do with them?</span>
+        <span class="sent"><strong>Question.</strong> FlyRank publishes content into client sites and then watches it decay — rankings slip, clicks fall, and teams notice late; so when a portfolio holds more pages than anyone can review, which pages are most likely to lose organic search clicks next month, and what should a person do with them?</span>
         <span class="sent"><strong>Data.</strong> One release of a pseudonymized production search warehouse (78.8 million daily fact rows, March–April 2026 windows), reduced to <span data-fact="frame_pages">101,441</span> content pages with at least 100 March impressions across <span data-fact="clients">43</span> clients.</span>
-        <span class="sent"><strong>Method.</strong> A page-level label (April impressions below 80% of March), eight pre-decision features, a frozen rule baseline, and a gradient-boosted model scored on clients that never appear in training, with the label taken from the following month.</span>
+        <span class="sent"><strong>Method.</strong> A page-level label (April impressions below 80% of March), eight pre-decision features, a frozen rule baseline of the kind the product already runs, and a gradient-boosted model scored on clients that never appear in training, with the label taken from the following month.</span>
         <span class="sent"><strong>Result.</strong> The model reaches precision@50 of <span data-fact="hgb_p50">0.82</span> (range <span data-fact="hgb_p50_range">0.62–0.94</span> over five client-grouped draws) against <span data-fact="rule_p50">0.54</span> for the rule baseline on the identical split, at a <span data-fact="base_rate">51.5%</span> base rate; removing the momentum feature drops it to <span data-fact="hgb_nomom_p50">0.516</span>.</span>
-        <span class="sent"><strong>Use.</strong> Decision support for a human review queue — the model ranks, deterministic reason codes explain and prescribe, and nothing is published automatically.</span>
+        <span class="sent"><strong>Use.</strong> Decision support inside a product that already flags pages with hand-written rules — the model ranks, deterministic reason codes explain and prescribe, and nothing is published automatically.</span>
       </p>
     </section>
 
@@ -519,13 +519,19 @@ footer .credit a{font-weight:600}
 
       <p class="lede">A portfolio of content pages almost always outgrows the people who maintain it. The decision this work supports is narrow and real: <em>which fifty pages does an editor open this week?</em></p>
 
+      <h3>The case study: a product that already flags pages</h3>
+
+      <p>FlyRank builds content as infrastructure — it researches, writes, and publishes pages straight into a client's site, then watches what search does with them. The failure mode that matters is quiet. A page ranks, then decays: rankings slip, clicks fall, and by the time anyone notices, it has been losing for a quarter. The product already flags pages for review with hand-written rules — a health score, quick-win tags, needs-attention flags. Those rules run in production, and they work.</p>
+
+      <p>What a hand-written rule cannot do is weigh eight tangled signals at once and say which fifty pages out of a hundred thousand deserve a person's week. That gap is this paper's case study. It comes from <strong>Lane 4</strong> of the FlyRank ML Internship, whose brief asks: <em>which visible pages under-capture clicks or engagement and deserve metadata, content, or monitoring review?</em> The answer the lane needs is not a score — it is a ranked list with a reason code on every row, so a reviewer knows why a page is there and what to do with it.</p>
+
       <p>Picture the Monday morning version. A team has <span data-fact="frame_pages">101,441</span> pages that cleared a meaningful-traffic floor last month, and room to touch a few dozen of them. The spreadsheet everyone reaches for sorts by sessions. The intuition behind it is that the biggest pages carry the most risk, and the oldest pages are the tired ones.</p>
 
       <p>Both intuitions are testable against the next month, and in this data both are weak or backwards. Pages in the smallest volume band declined <span data-fact="small_decline">53.5%</span> of the time; pages in the largest declined <span data-fact="large_decline">44.5%</span> — the opposite of the "protect the big pages" prior. The freshest content declined <span data-fact="fresh_decline">42.1%</span> of the time against <span data-fact="old_decline">49.9%</span> for the oldest bucket: a real but modest gap, and one that mixes page age with the fact that old pages have had longer to accumulate traffic.</p>
 
       <p>What does separate outcomes is how a page is doing <em>relative to its position peers</em> — the click-through rate a page earns at its rank, compared with pages ranking nearby. That signal has a spread of <span data-fact="ctr_spread">0.212</span> in click-through rate across <span data-fact="ctr_n">76,131</span> visible pages and survives as the strongest interpretable feature in the model. Momentum — impressions falling through March — turns out to be stronger still, and it is the feature the whole result depends on.</p>
 
-      <p>So the question sharpens. Not "which pages are big", but: <strong>given what we could see on 31 March, which pages will lose search clicks in April, and what should a person do about each one?</strong> This paper answers it in three steps — a validated ranking model, an honest comparison against a frozen rule baseline, and an action playbook that turns the ranking into reviewed work rather than automated changes.</p>
+      <p>So the question sharpens. Not "which pages are big", but: <strong>given what we could see on 31 March, which pages will lose search clicks in April, and what should a person do about each one?</strong> That is the question behind FlyRank's flag layer, and it has a cost the product cares about: rules are cheap and inspectable, and they already ship, so a learned ranker has to be measurably better at the top of the queue without becoming a black box. This paper answers it in three steps — a validated ranking model, an honest comparison against a frozen rule baseline of exactly that kind, and an action playbook that turns the ranking into reviewed work rather than automated changes.</p>
 
       <div class="note note--claim">
         <p class="note__label">What this paper is not</p>
@@ -791,6 +797,8 @@ footer .credit a{font-weight:600}
       <h2 id="playbook-h"><span class="num">6</span>Ranked recommendations</h2>
 
       <p class="lede">A ranking is not a recommendation. This section is the part a team would actually use: what the model's output is allowed to say, which page gets which action, and what must never happen without a human.</p>
+
+      <p>For FlyRank's flag layer, this is the shape a learned ranker has to fit. The flags stay the vocabulary a reviewer already knows, the model changes only the order in which pages arrive, and every row still carries a deterministic reason code a person can argue with. Nothing here replaces a rule with an opinion — it reorders work that was going to happen anyway.</p>
 
       <h3>From 176,738 pages to fifty actions</h3>
 
