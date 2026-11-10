@@ -1,0 +1,117 @@
+{
+  "notebook": "w05_model.ipynb",
+  "lane": "Lane 4 - CTR / Engagement Opportunity Scoring",
+  "decision_moment": "2026-03-31",
+  "feature_window": "2026-03-01..2026-03-31",
+  "label_window": "2026-04-01..2026-04-30 (forward, mid-panel; June sealed)",
+  "frame": {
+    "pages": 100893,
+    "clients": 43,
+    "base_rate": 0.5148
+  },
+  "split": {
+    "design": "grouped by client_hash_id, GroupShuffleSplit, test_size 0.2",
+    "seeds": [
+      42,
+      7,
+      2024,
+      101,
+      555
+    ],
+    "test_clients_per_fold": 9,
+    "baseline_tiebreak": "score, then clicks_lost, then impressions_30d"
+  },
+  "features": {
+    "numeric": [
+      "ctr_ratio",
+      "zero_clicks",
+      "log_impressions",
+      "avg_position_30d",
+      "days_with_impressions_30d",
+      "content_age_days",
+      "log_momentum"
+    ],
+    "categorical": [
+      "content_type"
+    ],
+    "excluded": [
+      "imp_apr",
+      "declined",
+      "baseline_score",
+      "ctr_points",
+      "clicks_lost",
+      "content_updated_date"
+    ]
+  },
+  "selected_for_queue": "hist-gbm",
+  "selected_for_explanation": "logistic",
+  "metrics": {
+    "baseline": {
+      "p_at_10_mean": 0.6,
+      "p_at_20_mean": 0.62,
+      "p_at_50_mean": 0.54,
+      "p_at_50_min": 0.46,
+      "p_at_50_max": 0.68,
+      "p_at_100_mean": 0.556,
+      "roc_auc_mean": 0.554,
+      "pr_auc_mean": 0.499
+    },
+    "logistic": {
+      "p_at_10_mean": 0.6,
+      "p_at_20_mean": 0.69,
+      "p_at_50_mean": 0.748,
+      "p_at_50_min": 0.64,
+      "p_at_50_max": 0.82,
+      "p_at_100_mean": 0.804,
+      "roc_auc_mean": 0.656,
+      "pr_auc_mean": 0.611
+    },
+    "logistic (no momentum)": {
+      "p_at_10_mean": 0.52,
+      "p_at_20_mean": 0.56,
+      "p_at_50_mean": 0.58,
+      "p_at_50_min": 0.5,
+      "p_at_50_max": 0.7,
+      "p_at_100_mean": 0.606,
+      "roc_auc_mean": 0.595,
+      "pr_auc_mean": 0.535
+    },
+    "hist-gbm": {
+      "p_at_10_mean": 0.84,
+      "p_at_20_mean": 0.79,
+      "p_at_50_mean": 0.82,
+      "p_at_50_min": 0.62,
+      "p_at_50_max": 0.94,
+      "p_at_100_mean": 0.806,
+      "roc_auc_mean": 0.643,
+      "pr_auc_mean": 0.591
+    },
+    "hist-gbm (no momentum)": {
+      "p_at_10_mean": 0.54,
+      "p_at_20_mean": 0.54,
+      "p_at_50_mean": 0.516,
+      "p_at_50_min": 0.34,
+      "p_at_50_max": 0.84,
+      "p_at_100_mean": 0.484,
+      "roc_auc_mean": 0.56,
+      "pr_auc_mean": 0.497
+    }
+  },
+  "gain_decomposition_p_at_50": {
+    "baseline": 0.54,
+    "add_momentum_feature_logistic": 0.748,
+    "add_nonlinear_model_class_hgb": 0.82,
+    "share_of_gain_from_feature": 0.743
+  },
+  "top_features_permutation_auc_drop": {
+    "log_momentum": 0.0622,
+    "ctr_ratio": 0.0289,
+    "log_impressions": 0.0074
+  },
+  "limitations": [
+    "9 clients per held-out fold; the mean across 5 seeds is the headline, not one draw",
+    "the label compares April with the whole of March, so within-March momentum is partly mechanical",
+    "the head ranks decline probability, not business value; multiply by clicks at risk for a value queue",
+    "no causal claim: the score says where to look, not what fixing a page will recover"
+  ]
+}
