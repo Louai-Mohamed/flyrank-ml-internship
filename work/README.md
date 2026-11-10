@@ -35,6 +35,12 @@ work/
 Copy `capstone_report_template.md` to `capstone_report.md` and fill it in as you go — it
 mirrors the eight axes your work is graded on, so writing it early keeps you honest.
 
+**The capstone paper is live at <https://louai-mohamed.github.io/flyrank-ml-internship/>**
+(source: `docs/index.html`, served by GitHub Pages from `main` → `/docs`). The exact URL also
+lives in `../submission/paper_url.txt`. `notebooks/capstone.ipynb` regenerates the page's four
+figures and social card into `docs/assets/`, then re-reads `docs/index.html` and fails if any
+of the 88 `data-fact` numbers disagrees with the receipts in `outputs/`.
+
 ## Your assignment index
 
 Your skeleton notebooks are already in `notebooks/` — one per assignment, pre-named.
@@ -52,7 +58,7 @@ in Colab, straight from your repo):
 | `notebooks/w05_model.ipynb` | ML-08 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Louai-Mohamed/flyrank-ml-internship/blob/main/work/notebooks/w05_model.ipynb?flush_cache=true) | ✅ |
 | `notebooks/w06_validation_audit.ipynb` | ML-09 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Louai-Mohamed/flyrank-ml-internship/blob/main/work/notebooks/w06_validation_audit.ipynb?flush_cache=true) | ✅ |
 | `notebooks/w07_action_playbook.ipynb` | ML-10 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Louai-Mohamed/flyrank-ml-internship/blob/main/work/notebooks/w07_action_playbook.ipynb?flush_cache=true) | ✅ |
-| `notebooks/capstone.ipynb` | ML-11 (the paper mirrors it) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Louai-Mohamed/flyrank-ml-internship/blob/main/work/notebooks/capstone.ipynb?flush_cache=true) | ☐ |
+| `notebooks/capstone.ipynb` | ML-11 (the paper mirrors it) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Louai-Mohamed/flyrank-ml-internship/blob/main/work/notebooks/capstone.ipynb?flush_cache=true) | ✅ |
 | closing section of `notebooks/capstone.ipynb` | ML-12 — 5-min demo outline + social-post cut + employer-facing summary | (same notebook, last markdown cells) | ☐ |
 
 When your paper is deployed, put its exact URL in `../submission/paper_url.txt` (one line).

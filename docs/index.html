@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which pages should you review first? An early-warning queue for organic click decline</title>
+<meta name="description" content="A client-grouped, time-forward evaluation of a page-level model that ranks organic content pages by their probability of losing search clicks the following month. Built on the FlyRank ML Internship dataset.">
+<meta name="author" content="Louai Mohamed">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://louai-mohamed.github.io/flyrank-ml-internship/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Which pages should you review first?">
+<meta property="og:description" content="An early-warning queue for organic click decline, validated on client-grouped holdouts. Model vs baseline on the same split, with the honest numbers.">
+<meta property="og:url" content="https://louai-mohamed.github.io/flyrank-ml-internship/">
+<meta property="og:image" content="assets/social-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Which pages should you review first?">
+<meta name="twitter:description" content="An early-warning queue for organic click decline, validated on client-grouped holdouts.">
+<meta name="twitter:image" content="assets/social-preview.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d4e89'/%3E%3Cpath d='M8 22V10h3.2v9.4H24V22z' fill='%23fbfaf7'/%3E%3C/svg%3E">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   Tokens — a paper, not an app: warm surface, prussian accent,
+   one clay hue reserved for "read this caveat" moments.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --paper:#fbfaf7;
+  --paper-2:#f4f2ec;
+  --paper-3:#eceae3;
+  --rule:#e2ded4;
+  --rule-strong:#cdc7b9;
+  --ink:#17181a;
+  --ink-2:#4e5057;
+  --ink-3:#7c7e86;
+  --accent:#1d4e89;
+  --accent-2:#2f6fb3;
+  --accent-soft:#e9eef6;
+  --clay:#9c5228;
+  --clay-soft:#f7ede6;
+  --ok:#2f6b4f;
+
+  --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Consolas,monospace;
+
+  --step--1:0.8125rem;
+  --step-0:1.0625rem;
+  --step-1:1.1875rem;
+  --step-2:1.4375rem;
+  --step-3:1.875rem;
+  --step-4:clamp(2.05rem,1.35rem + 2.6vw,3.1rem);
+
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:24px; --space-6:32px; --space-7:48px; --space-8:64px; --space-9:96px;
+
+  --radius-sm:4px; --radius-md:8px; --radius-lg:14px;
+  --measure:min(72ch,100%);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --dur-fast:140ms; --dur-base:220ms;
+}
+html[data-theme="dark"]{
+  --paper:#131417;
+  --paper-2:#1a1c20;
+  --paper-3:#22252a;
+  --rule:#2b2e34;
+  --rule-strong:#3c4048;
+  --ink:#eae7e0;
+  --ink-2:#b3b0a9;
+  --ink-3:#8b8880;
+  --accent:#8fbde8;
+  --accent-2:#a8cdf0;
+  --accent-soft:#1d2632;
+  --clay:#d99a72;
+  --clay-soft:#2a211c;
+  --ok:#7fbf9c;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Base
+   ══════════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--font-serif);font-size:var(--step-0);line-height:1.68;
+  font-kerning:normal;font-variant-ligatures:common-ligatures;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+}
+p{margin:0 0 var(--space-4)}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent);transition:color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),background-color var(--dur-fast) var(--ease-out)}
+a:hover{color:var(--accent-2);border-bottom-color:var(--accent-2)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+strong,b{font-weight:600}
+em{font-style:italic}
+code,kbd,samp{font-family:var(--font-mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius-sm);padding:.08em .34em}
+hr{border:0;border-top:1px solid var(--rule);margin:var(--space-7) 0}
+::selection{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+
+.skip{
+  position:absolute;left:var(--space-4);top:-100px;z-index:50;
+  background:var(--paper);color:var(--ink);border:1px solid var(--rule-strong);
+  border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);
+  font-family:var(--font-sans);font-size:var(--step--1);
+  transition:top var(--dur-base) var(--ease-out);
+}
+.skip:focus{top:var(--space-4)}
+
+/* ══════════════════════════════════════════════════════════════════
+   Shell: rail + article
+   ══════════════════════════════════════════════════════════════════ */
+.shell{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:var(--space-6);
+  max-width:1180px;margin:0 auto;
+  padding:var(--space-7) var(--space-5) var(--space-9);
+}
+@media (min-width:1080px){
+  .shell{grid-template-columns:196px minmax(0,1fr);gap:var(--space-8);padding-top:var(--space-8)}
+}
+article{min-width:0}
+
+/* ── rail ── */
+.rail{display:none}
+@media (min-width:1080px){
+  .rail{display:block;position:relative}
+  .rail__inner{position:sticky;top:var(--space-6);max-height:calc(100vh - 96px);overflow:auto;scrollbar-width:thin}
+}
+.rail__label{
+  font-family:var(--font-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 var(--space-3);padding-left:var(--space-3);
+}
+.rail ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--rule)}
+.rail li{margin:0}
+.rail a{
+  display:block;padding:5px 0 5px var(--space-3);margin-left:-1px;
+  border-left:2px solid transparent;border-bottom:0;
+  font-family:var(--font-sans);font-size:var(--step--1);line-height:1.35;color:var(--ink-2);
+  transition:color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out);
+}
+.rail a:hover{color:var(--ink)}
+.rail a.is-current{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.rail .num{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-right:6px}
+.rail a.is-current .num{color:var(--accent)}
+
+/* ── mobile contents ── */
+.contents-mobile{display:block;margin-bottom:var(--space-6);border:1px solid var(--rule);border-radius:var(--radius-md);background:var(--paper-2)}
+@media (min-width:1080px){.contents-mobile{display:none}}
+.contents-mobile summary{
+  cursor:pointer;list-style:none;padding:var(--space-3) var(--space-4);
+  font-family:var(--font-sans);font-size:var(--step--1);font-weight:600;color:var(--ink-2);
+  display:flex;align-items:center;gap:var(--space-2);
+}
+.contents-mobile summary::-webkit-details-marker{display:none}
+.contents-mobile summary::after{content:"▾";margin-left:auto;color:var(--ink-3);transition:transform var(--dur-base) var(--ease-out)}
+.contents-mobile[open] summary::after{transform:rotate(180deg)}
+.contents-mobile ol{list-style:none;margin:0;padding:0 var(--space-4) var(--space-3);font-family:var(--font-sans);font-size:var(--step--1)}
+.contents-mobile li{padding:3px 0}
+.contents-mobile a{border-bottom:0;color:var(--ink-2)}
+.contents-mobile a:hover{color:var(--accent)}
+
+/* ══════════════════════════════════════════════════════════════════
+   Masthead
+   ══════════════════════════════════════════════════════════════════ */
+.masthead{margin-bottom:var(--space-7)}
+.kicker{
+  display:inline-flex;align-items:center;gap:var(--space-2);
+  font-family:var(--font-sans);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 var(--space-4);
+}
+.kicker .dot{width:5px;height:5px;border-radius:50%;background:var(--clay);display:inline-block}
+h1{
+  font-family:var(--font-serif);font-size:var(--step-4);line-height:1.12;letter-spacing:-.018em;
+  font-weight:600;margin:0 0 var(--space-4);text-wrap:balance;max-width:22ch;
+}
+.deck{font-size:var(--step-1);line-height:1.55;color:var(--ink-2);margin:0 0 var(--space-5);max-width:56ch}
+.byline{
+  display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3);
+  font-family:var(--font-sans);font-size:var(--step--1);color:var(--ink-3);
+  padding-top:var(--space-4);border-top:1px solid var(--rule);
+}
+.byline .who{color:var(--ink);font-weight:600}
+.byline .sep{color:var(--rule-strong)}
+.byline a{border-bottom:0;color:var(--ink-2)}
+.byline a:hover{color:var(--accent)}
+
+/* ── key numbers ── */
+.keynums{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);border-radius:var(--radius-md);
+  overflow:hidden;margin:var(--space-6) 0 0;
+}
+@media (min-width:720px){.keynums{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.keynums div{background:var(--paper);padding:var(--space-4) var(--space-4) var(--space-3)}
+.keynums dt{font-family:var(--font-sans);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px}
+.keynums dd{margin:0;font-family:var(--font-mono);font-size:1.32rem;font-weight:600;line-height:1.15;letter-spacing:-.02em}
+.keynums .sub{display:block;font-family:var(--font-sans);font-size:11.5px;color:var(--ink-3);letter-spacing:0;font-weight:400;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════
+   Abstract
+   ══════════════════════════════════════════════════════════════════ */
+.abstract{
+  background:var(--paper-2);border:1px solid var(--rule);border-left:3px solid var(--accent);
+  border-radius:var(--radius-sm);padding:var(--space-5) var(--space-5) var(--space-4);
+  margin:0 0 var(--space-8);
+}
+.abstract h2{
+  font-family:var(--font-sans);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 var(--space-3);font-weight:700;border:0;padding:0;
+}
+.abstract p{font-size:var(--step-0);line-height:1.66;margin:0 0 var(--space-3)}
+.abstract p:last-child{margin-bottom:0}
+.abstract .sent{display:block}
+.abstract .sent + .sent{margin-top:var(--space-2)}
+
+/* ══════════════════════════════════════════════════════════════════
+   Sections
+   ══════════════════════════════════════════════════════════════════ */
+section{scroll-margin-top:var(--space-6)}
+h2{
+  font-family:var(--font-serif);font-size:var(--step-2);line-height:1.24;font-weight:600;
+  letter-spacing:-.012em;margin:var(--space-8) 0 var(--space-4);
+  padding-bottom:var(--space-3);border-bottom:1px solid var(--rule);
+  display:flex;align-items:baseline;gap:var(--space-3);text-wrap:balance;
+}
+h2 .num{
+  font-family:var(--font-mono);font-size:.66em;font-weight:400;color:var(--accent);
+  letter-spacing:0;flex:none;min-width:1.6em;
+}
+h3{
+  font-family:var(--font-serif);font-size:var(--step-1);line-height:1.35;font-weight:600;
+  margin:var(--space-6) 0 var(--space-3);text-wrap:balance;
+}
+h4{
+  font-family:var(--font-sans);font-size:var(--step--1);font-weight:700;letter-spacing:.02em;
+  margin:var(--space-5) 0 var(--space-2);
+}
+p,ul,ol{max-width:var(--measure)}
+ul,ol{margin:0 0 var(--space-4);padding-left:1.35em}
+li{margin:0 0 var(--space-2)}
+li::marker{color:var(--ink-3)}
+ul.tight li,ol.tight li{margin-bottom:2px}
+.lede{font-size:var(--step-1);line-height:1.55;color:var(--ink-2);max-width:60ch}
+
+/* ══════════════════════════════════════════════════════════════════
+   Figures
+   ══════════════════════════════════════════════════════════════════ */
+figure{
+  margin:var(--space-6) 0;
+  padding:0;
+  max-width:min(820px,100%);
+}
+figure img{
+  display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:var(--radius-md);
+  background:#fff;
+}
+figcaption{
+  font-family:var(--font-sans);font-size:var(--step--1);line-height:1.55;color:var(--ink-2);
+  margin-top:var(--space-3);max-width:66ch;
+}
+figcaption b{color:var(--ink);font-weight:700}
+figcaption .take{display:block;margin-top:var(--space-2);color:var(--ink);border-left:2px solid var(--accent);padding-left:var(--space-3)}
+
+/* ══════════════════════════════════════════════════════════════════
+   Tables
+   ══════════════════════════════════════════════════════════════════ */
+.tablewrap{max-width:100%;overflow-x:auto;margin:var(--space-5) 0;border:1px solid var(--rule);border-radius:var(--radius-md);background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-family:var(--font-sans);font-size:var(--step--1);font-variant-numeric:tabular-nums}
+caption{
+  caption-side:top;text-align:left;padding:var(--space-3) var(--space-4);
+  font-family:var(--font-sans);font-size:var(--step--1);color:var(--ink-2);
+  border-bottom:1px solid var(--rule);background:var(--paper-2);
+}
+caption b{color:var(--ink)}
+th,td{padding:9px var(--space-4);text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{
+  font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:700;background:var(--paper-2);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+td.num,th.num{text-align:right;font-family:var(--font-mono);font-size:.94em;white-space:nowrap}
+tr.is-key td{background:color-mix(in srgb,var(--accent) 7%,transparent);font-weight:600}
+tr.is-key td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
+.tnote{font-family:var(--font-sans);font-size:12.5px;color:var(--ink-3);margin:var(--space-2) 0 var(--space-5);max-width:66ch}
+
+/* ══════════════════════════════════════════════════════════════════
+   Callouts
+   ══════════════════════════════════════════════════════════════════ */
+.note{
+  border:1px solid var(--rule);border-left:3px solid var(--ink-3);
+  background:var(--paper-2);border-radius:var(--radius-sm);
+  padding:var(--space-4) var(--space-4) var(--space-3);margin:var(--space-5) 0;max-width:var(--measure);
+}
+.note > :last-child{margin-bottom:0}
+.note__label{
+  font-family:var(--font-sans);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;margin:0 0 var(--space-2);display:flex;align-items:center;gap:6px;
+}
+.note--claim{border-left-color:var(--clay);background:var(--clay-soft)}
+.note--claim .note__label{color:var(--clay)}
+.note--ok{border-left-color:var(--ok)}
+.note--ok .note__label{color:var(--ok)}
+.note p{font-size:.98em}
+
+/* ══════════════════════════════════════════════════════════════════
+   Playbook blocks
+   ══════════════════════════════════════════════════════════════════ */
+.actions{display:grid;gap:var(--space-3);margin:var(--space-5) 0;max-width:var(--measure)}
+.action{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-1);
+  border:1px solid var(--rule);border-radius:var(--radius-md);background:var(--paper);
+  padding:var(--space-4);
+}
+@media (min-width:640px){.action{grid-template-columns:132px minmax(0,1fr);gap:var(--space-4);align-items:baseline}}
+.action__code{
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;color:var(--accent);
+  background:var(--accent-soft);border-radius:var(--radius-sm);padding:2px 6px;
+  display:inline-flex;align-items:center;justify-self:start;white-space:nowrap;
+}
+.action__body{font-size:.98em;line-height:1.55;margin:0}
+.action__body b{font-weight:600}
+
+.nogo{
+  list-style:none;padding:0;margin:var(--space-4) 0;max-width:var(--measure);
+  display:grid;gap:var(--space-2);
+}
+.nogo li{
+  display:grid;grid-template-columns:18px minmax(0,1fr);gap:var(--space-3);
+  font-size:.98em;line-height:1.5;padding:var(--space-2) var(--space-3);
+  background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius-sm);
+  margin:0;
+}
+.nogo li::before{
+  content:"✕";font-family:var(--font-sans);font-size:11px;color:var(--clay);
+  line-height:1.5;text-align:center;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Reproducibility list
+   ══════════════════════════════════════════════════════════════════ */
+.repro{list-style:none;padding:0;margin:var(--space-4) 0;display:grid;gap:var(--space-2);max-width:var(--measure)}
+.repro li{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:2px;margin:0;
+  padding:var(--space-3) var(--space-4);border:1px solid var(--rule);border-radius:var(--radius-sm);
+  background:var(--paper-2);
+}
+.repro .f{font-family:var(--font-mono);font-size:12.5px;color:var(--ink);word-break:break-word}
+.repro .d{font-family:var(--font-sans);font-size:12.5px;color:var(--ink-3);line-height:1.45}
+
+pre{
+  font-family:var(--font-mono);font-size:12.5px;line-height:1.6;
+  background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius-md);
+  padding:var(--space-4);overflow-x:auto;margin:var(--space-4) 0;max-width:100%;
+}
+pre code{background:none;border:0;padding:0;font-size:inherit}
+
+/* ══════════════════════════════════════════════════════════════════
+   Footer
+   ══════════════════════════════════════════════════════════════════ */
+footer{
+  margin-top:var(--space-9);padding-top:var(--space-6);border-top:1px solid var(--rule);
+  font-family:var(--font-sans);font-size:var(--step--1);color:var(--ink-2);
+}
+footer h2{font-family:var(--font-sans);font-size:12px;letter-spacing:.13em;text-transform:uppercase;border:0;padding:0;margin:var(--space-6) 0 var(--space-3);color:var(--ink-3);display:block}
+footer p{max-width:66ch}
+footer .credit{font-size:var(--step-0);font-family:var(--font-serif);color:var(--ink)}
+footer .credit a{font-weight:600}
+.refs{list-style:none;padding:0;margin:var(--space-3) 0;font-size:12.5px;line-height:1.55;display:grid;gap:var(--space-2);max-width:66ch}
+.refs li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:var(--space-2);margin:0}
+.refs .n{font-family:var(--font-mono);color:var(--ink-3)}
+.foot-meta{
+  display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3);
+  margin-top:var(--space-6);padding-top:var(--space-4);border-top:1px solid var(--rule);
+  font-size:12px;color:var(--ink-3);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Controls
+   ══════════════════════════════════════════════════════════════════ */
+.tools{position:fixed;right:var(--space-4);bottom:var(--space-4);z-index:40;display:flex;gap:var(--space-2)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:40px;padding:0 var(--space-4);
+  font-family:var(--font-sans);font-size:12.5px;font-weight:600;letter-spacing:.01em;
+  color:var(--ink-2);background:color-mix(in srgb,var(--paper) 88%,transparent);
+  border:1px solid var(--rule-strong);border-radius:999px;cursor:pointer;
+  backdrop-filter:blur(8px);
+  transition:background-color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);
+}
+.btn:hover{color:var(--ink);border-color:var(--ink-3);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.btn[data-state="done"]{color:var(--ok);border-color:var(--ok)}
+.btn[data-state="error"]{color:var(--clay);border-color:var(--clay)}
+.btn svg{width:15px;height:15px;flex:none}
+
+/* ══════════════════════════════════════════════════════════════════
+   Print — a paper should print like one
+   ══════════════════════════════════════════════════════════════════ */
+@media print{
+  :root{--paper:#fff;--paper-2:#f7f7f7;--ink:#000;--ink-2:#222;--ink-3:#555;--rule:#bbb}
+  .rail,.tools,.contents-mobile,.skip{display:none !important}
+  .shell{display:block;max-width:none;padding:0}
+  body{font-size:10.5pt;line-height:1.45}
+  h1{font-size:22pt}
+  h2{font-size:14pt;break-after:avoid}
+  figure,table,.note{break-inside:avoid}
+  a{color:#000;border-bottom:0}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:8.5pt;color:#555}
+  .keynums{border:1px solid #bbb}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:1ms !important;animation-duration:1ms !important}
+}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "headline": "Which pages should you review first? An early-warning queue for organic click decline",
+  "abstract": "A page-level model ranks organic content pages by their probability of losing search clicks the following month. Evaluated with clients held out and the label taken from a later month, the model reaches precision@50 of 0.82 (0.62-0.94 across five client-grouped draws) against 0.54 for the frozen rule baseline.",
+  "author": {"@type": "Person", "name": "Louai Mohamed", "url": "https://github.com/Louai-Mohamed"},
+  "datePublished": "2026-11-10",
+  "inLanguage": "en",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "isBasedOn": "https://huggingface.co/datasets/FlyRank/internship-warehouse",
+  "keywords": ["content refresh", "organic search", "CTR", "ranking", "client-grouped validation"]
+}
+</script>
+</head>
+<body data-facts="assets/paper-facts.json">
+<a class="skip" href="#abstract">Skip to the paper</a>
+
+<div class="shell">
+  <nav class="rail" aria-label="Contents">
+    <div class="rail__inner">
+      <p class="rail__label">Contents</p>
+      <ol id="toc">
+        <li><a href="#abstract"><span class="num">§</span>Abstract</a></li>
+        <li><a href="#introduction"><span class="num">1</span>Problem</a></li>
+        <li><a href="#data"><span class="num">2</span>Data</a></li>
+        <li><a href="#method"><span class="num">3</span>Method</a></li>
+        <li><a href="#results"><span class="num">4</span>Results</a></li>
+        <li><a href="#limits"><span class="num">5</span>Limits</a></li>
+        <li><a href="#playbook"><span class="num">6</span>Recommendations</a></li>
+        <li><a href="#repro"><span class="num">7</span>Reproducibility</a></li>
+        <li><a href="#credit"><span class="num">§</span>Data credit</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <article>
+    <header class="masthead">
+      <p class="kicker"><span class="dot" aria-hidden="true"></span>FlyRank ML Internship · Lane 4 · March–April 2026</p>
+      <h1>Which pages should you review first?</h1>
+      <p class="deck">An early-warning queue for organic click decline — ranked by a model, explained by rules, validated with clients held out.</p>
+      <div class="byline">
+        <span class="who">Louai Mohamed</span>
+        <span class="sep" aria-hidden="true">·</span>
+        <span>FlyRank ML Internship</span>
+        <span class="sep" aria-hidden="true">·</span>
+        <time datetime="2026-11-10">10 November 2026</time>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://github.com/Louai-Mohamed/flyrank-ml-internship">Code &amp; notebooks</a>
+      </div>
+
+      <dl class="keynums">
+        <div>
+          <dt>Pages scored</dt>
+          <dd><span data-fact="frame_pages">101,441</span><span class="sub">of <span data-fact="march_pages">176,738</span> in March</span></dd>
+        </div>
+        <div>
+          <dt>Model precision@50</dt>
+          <dd><span data-fact="hgb_p50">0.82</span><span class="sub"><span data-fact="hgb_p50_range">0.62–0.94</span> across 5 draws</span></dd>
+        </div>
+        <div>
+          <dt>Frozen rule baseline</dt>
+          <dd><span data-fact="rule_p50">0.54</span><span class="sub">same split, same pages</span></dd>
+        </div>
+        <div>
+          <dt>Queue it produces</dt>
+          <dd><span data-fact="actionable">8,395</span><span class="sub"><span data-fact="actionable_share">8.3%</span> of the frame is work</span></dd>
+        </div>
+      </dl>
+    </header>
+
+    <section class="abstract" id="abstract" aria-labelledby="abstract-h">
+      <h2 id="abstract-h">Abstract</h2>
+      <p>
+        <span class="sent"><strong>Question.</strong> When a portfolio holds more content pages than a team can review, which pages are most likely to lose organic search clicks next month — and what should a person do with them?</span>
+        <span class="sent"><strong>Data.</strong> One release of a pseudonymized production search warehouse (78.8 million daily fact rows, March–April 2026 windows), reduced to <span data-fact="frame_pages">101,441</span> content pages with at least 100 March impressions across <span data-fact="clients">43</span> clients.</span>
+        <span class="sent"><strong>Method.</strong> A page-level label (April impressions below 80% of March), eight pre-decision features, a frozen rule baseline, and a gradient-boosted model scored on clients that never appear in training, with the label taken from the following month.</span>
+        <span class="sent"><strong>Result.</strong> The model reaches precision@50 of <span data-fact="hgb_p50">0.82</span> (range <span data-fact="hgb_p50_range">0.62–0.94</span> over five client-grouped draws) against <span data-fact="rule_p50">0.54</span> for the rule baseline on the identical split, at a <span data-fact="base_rate">51.5%</span> base rate; removing the momentum feature drops it to <span data-fact="hgb_nomom_p50">0.516</span>.</span>
+        <span class="sent"><strong>Use.</strong> Decision support for a human review queue — the model ranks, deterministic reason codes explain and prescribe, and nothing is published automatically.</span>
+      </p>
+    </section>
+
+    <details class="contents-mobile">
+      <summary>Contents</summary>
+      <ol>
+        <li><a href="#introduction">1 · The problem</a></li>
+        <li><a href="#data">2 · Data</a></li>
+        <li><a href="#method">3 · Method</a></li>
+        <li><a href="#results">4 · Results</a></li>
+        <li><a href="#limits">5 · Limits</a></li>
+        <li><a href="#playbook">6 · Recommendations</a></li>
+        <li><a href="#repro">7 · Reproducibility</a></li>
+        <li><a href="#credit">Acknowledgments &amp; data credit</a></li>
+      </ol>
+    </details>
+
+    <section id="introduction" aria-labelledby="introduction-h">
+      <h2 id="introduction-h"><span class="num">1</span>The problem</h2>
+
+      <p class="lede">A portfolio of content pages almost always outgrows the people who maintain it. The decision this work supports is narrow and real: <em>which fifty pages does an editor open this week?</em></p>
+
+      <p>Picture the Monday morning version. A team has <span data-fact="frame_pages">101,441</span> pages that cleared a meaningful-traffic floor last month, and room to touch a few dozen of them. The spreadsheet everyone reaches for sorts by sessions. The intuition behind it is that the biggest pages carry the most risk, and the oldest pages are the tired ones.</p>
+
+      <p>Both intuitions are testable against the next month, and in this data both are weak or backwards. Pages in the smallest volume band declined <span data-fact="small_decline">53.5%</span> of the time; pages in the largest declined <span data-fact="large_decline">44.5%</span> — the opposite of the "protect the big pages" prior. The freshest content declined <span data-fact="fresh_decline">42.1%</span> of the time against <span data-fact="old_decline">49.9%</span> for the oldest bucket: a real but modest gap, and one that mixes page age with the fact that old pages have had longer to accumulate traffic.</p>
+
+      <p>What does separate outcomes is how a page is doing <em>relative to its position peers</em> — the click-through rate a page earns at its rank, compared with pages ranking nearby. That signal has a spread of <span data-fact="ctr_spread">0.212</span> in click-through rate across <span data-fact="ctr_n">76,131</span> visible pages and survives as the strongest interpretable feature in the model. Momentum — impressions falling through March — turns out to be stronger still, and it is the feature the whole result depends on.</p>
+
+      <p>So the question sharpens. Not "which pages are big", but: <strong>given what we could see on 31 March, which pages will lose search clicks in April, and what should a person do about each one?</strong> This paper answers it in three steps — a validated ranking model, an honest comparison against a frozen rule baseline, and an action playbook that turns the ranking into reviewed work rather than automated changes.</p>
+
+      <div class="note note--claim">
+        <p class="note__label">What this paper is not</p>
+        <p>It is not a causal study. Nothing here was assigned at random, no page was changed by this work, and no number on this page says what will happen if a page is refreshed. It is a ranking study: a measurement of how well pre-decision signals order pages by what happened next, in one portfolio, over one month pair.</p>
+      </div>
+    </section>
+
+    <section id="data" aria-labelledby="data-h">
+      <h2 id="data-h"><span class="num">2</span>Data</h2>
+
+      <p>All numbers come from one fixed snapshot of a pseudonymized production search warehouse, released for this internship as <code>flyrank_pseudonymized_warehouse_release_v20260703</code> (export date 2026-07-03; daily facts stop 2026-06-30 by design, because the freshest days are incomplete). The release holds <span data-fact="fact_rows">78.8 million</span> daily fact rows across the portfolio, alongside one row per content item and one per client.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 1.</b> What the study uses, and the window each piece covers.</caption>
+          <thead>
+            <tr><th>Piece</th><th>Table</th><th>Grain</th><th>Window used</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Features</td><td><code>fact_content_daily_performance</code></td><td>content × day</td><td>2026-03-01 → 2026-03-31</td></tr>
+            <tr><td>Label</td><td><code>fact_content_daily_performance</code></td><td>content × day</td><td>2026-04-01 → 2026-04-30</td></tr>
+            <tr><td>Page attributes</td><td><code>dim_content</code></td><td>one row per content item</td><td>as of the release</td></tr>
+            <tr><td>Client identity</td><td><code>dim_clients</code></td><td>one row per client</td><td>as of the release</td></tr>
+            <tr><td>Sealed</td><td>everything after 2026-04-30</td><td>—</td><td>never read in this study</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The frame, and what was excluded</h3>
+
+      <p>March 2026 describes <span data-fact="march_pages">176,738</span> pages that received any impressions. Three filters produce the study frame, and each one is a choice with a cost:</p>
+
+      <ul>
+        <li><strong>At least 100 March impressions.</strong> Below that, click-through rate is noise and a "decline" is a rounding error. This keeps <span data-fact="frame_pages">101,441</span> pages — <span data-fact="frame_share">57.4%</span> of March — and silently drops the long tail, which is a limitation, not a detail.</li>
+        <li><strong>An April row must exist to be labelled.</strong> <span data-fact="dropped_no_april">548</span> pages disappear between the months (one client has no April activity at all), leaving <span data-fact="evaluable_pages">100,893</span> evaluable pages across <span data-fact="clients">43</span> clients. The queue still scores <span data-fact="queue_clients">44</span> clients, so a small number of rows are scored but never validated.</li>
+        <li><strong>Features must be knowable on 31 March.</strong> Anything derived from April is excluded by construction, including the label's own ingredients.</li>
+      </ul>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 2.</b> Columns that were considered and dropped, with the reason.</caption>
+          <thead>
+            <tr><th>Column</th><th>Why it is not a feature</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>imp_apr</code>, <code>declined</code></td><td>April measurements — they define the label. Using them is the leak this paper spends a section hunting.</td></tr>
+            <tr><td><code>content_updated_date</code></td><td>Future-dated on most rows in this release; unusable as an age or freshness signal.</td></tr>
+            <tr><td><code>baseline_score</code>, <code>ctr_points</code>, <code>clicks_lost</code></td><td>Products of the rule baseline; including them would let the baseline leak into the model it is compared against.</td></tr>
+            <tr><td><code>ctr_ratio</code> for deep positions</td><td>Kept, but missing on <span data-fact="unsized_share">24.5%</span> of the queue: position tiers below the visible set have no peer median, so a click gap cannot be sized there.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="tnote">Every gap figure in this paper is therefore a <em>lower bound</em>: it sums only the pages that could be sized against a peer median.</p>
+
+      <div class="note note--ok">
+        <p class="note__label">Public-safe by construction</p>
+        <p>The release is pseudonymized before it reaches the intern: clients appear only as <code>client_hash_id</code>, pages as <code>content_hash_id</code>, with no domains, URLs, titles, or query text. No client name, address, or raw query appears anywhere in this paper, its figures, or its notebooks — and the analysis code never asks for one.</p>
+      </div>
+    </section>
+
+    <section id="method" aria-labelledby="method-h">
+      <h2 id="method-h"><span class="num">3</span>Method</h2>
+
+      <p class="lede">One unit of analysis, one label, eight features that a person could have read off a dashboard on 31 March, and a validation design that refuses to let the same client sit on both sides of the split.</p>
+
+      <h3>Unit and label</h3>
+
+      <p>The unit is a content page at one decision moment: 31 March 2026. The label is deliberately blunt — <strong>declined</strong> means April impressions were below 80% of March impressions. It is a traffic-loss label, not a quality label: a page can lose impressions because it lost rankings, because seasonality turned, or because a sibling page absorbed its queries. The base rate is <span data-fact="base_rate">51.5%</span>, which is what makes precision at small K a meaningful measure: a coin flip already gets half the pages right.</p>
+
+      <h3>Features</h3>
+
+      <p>Eight features, all computed from March only. Seven numeric, one categorical.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 3.</b> The feature set. Every column is knowable on the decision date; none is derived from April.</caption>
+          <thead>
+            <tr><th>Feature</th><th>What it measures</th><th>Why it is here</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>ctr_ratio</code></td><td>Page CTR ÷ median CTR of pages in its position tier</td><td>The one signal the earlier audit found CONFIRMED; interpretable in one sentence</td></tr>
+            <tr><td><code>zero_clicks</code></td><td>Page earned no clicks in March despite impressions</td><td>Separates "not clicked" from "clicked less"</td></tr>
+            <tr><td><code>log_impressions</code></td><td>March impressions, logged</td><td>Scale context; keeps the model from ranking by raw size</td></tr>
+            <tr><td><code>avg_position_30d</code></td><td>Mean rank across March</td><td>Determines which peer group the CTR is judged against</td></tr>
+            <tr><td><code>days_with_impressions_30d</code></td><td>Distinct days with any impression</td><td>Distinguishes a steady page from a spiky one</td></tr>
+            <tr><td><code>content_age_days</code></td><td>Age at the decision date</td><td>Context only — the age signal was MIXED in the audit and is never used as a trigger</td></tr>
+            <tr><td><code>log_momentum</code></td><td>log(impressions in the last 15 days ÷ first 15 days of March)</td><td>The strongest signal in the data, and the one the result depends on</td></tr>
+            <tr><td><code>content_type</code></td><td>Categorical page type</td><td>Allows different baselines for different formats</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Baseline: a frozen rule, not a straw man</h3>
+
+      <p>The baseline is the rule built in the previous week and then frozen, so the model has something fixed to beat: <code>score = 3 × ctr_points + 2 × persistent</code>, where <code>ctr_points</code> is 0, 1, or 3 depending on how far the page's CTR sits below its peer median, and <code>persistent</code> rewards a page that is consistently visible. Ties break on clicks lost, then impressions. It is deterministic, inspectable, and cheap — exactly what a practitioner would use without a model. It reaches precision@50 of <span data-fact="rule_p50">0.54</span> on the honest split.</p>
+
+      <h3>Validation: clients held out, label from the future</h3>
+
+      <p>Two properties have to hold at once. The label must come from a later window than the features (it does, by construction: March features, April label). And a held-out page must not share a client with a training page, because pages from one client share their template, their tracking setup, and their seasonality.</p>
+
+      <p>That second property is not a technicality. The label's intraclass correlation across clients is <span data-fact="icc">0.133</span>: roughly one eighth of the variance in "did this page decline" lives at the client level. A random page split lets a model memorise client identity and then report it as skill — and it does. On a random 80/20 page split the same model reaches precision@50 of <span data-fact="random_p50">0.992</span>. With clients held out it reaches <span data-fact="grouped_p50">0.82</span>. The first number is not a better model; it is a broken experiment.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 4.</b> The same model, the same pages, two split designs. The difference is what the split lets it see.</caption>
+          <thead>
+            <tr><th>Design</th><th class="num">P@50</th><th class="num">ROC-AUC</th><th>What the test set contains</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Random page split (stratified on the label)</td><td class="num" data-fact="random_p50">0.992</td><td class="num" data-fact="random_auc">0.791</td><td>Pages whose client also appears in training</td></tr>
+            <tr class="is-key"><td>Client-grouped split (20% of clients held out)</td><td class="num" data-fact="grouped_p50">0.82</td><td class="num" data-fact="grouped_auc">0.643</td><td>Clients the model has never seen</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">Five seeds (42, 7, 2024, 101, 555), nine held-out clients per draw. Every headline number in this paper is the mean across those five draws with the min–max range beside it; no single draw is reported as the result.</p>
+
+      <h3>Leakage checks</h3>
+
+      <p>Three checks were run, and they are reported as a test of the audit, not of the model. First, the feature query was read line by line: it touches March and dim tables only. Second, the frame was searched for product flags that might encode a decision already made upstream — none are present. Third, a deliberate injection: feed the model columns it must never have, and confirm the score saturates.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 5.</b> Injection test on the grouped split. A correct audit makes the leaky variants explode; the shipped feature set does not.</caption>
+          <thead>
+            <tr><th>Feature set</th><th class="num">ROC-AUC</th><th class="num">P@50</th><th>Reading</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Shipped features</td><td class="num" data-fact="inj_shipped_auc">0.617</td><td class="num">0.62</td><td>Honest baseline for the injection test</td></tr>
+            <tr><td>+ <code>imp_apr</code> (the label's own ingredient)</td><td class="num" data-fact="inj_april_auc">0.999</td><td class="num">1.00</td><td>Near-perfect, as a leak should be</td></tr>
+            <tr><td>+ <code>april_ratio</code> (a near-label)</td><td class="num" data-fact="inj_ratio_auc">1.000</td><td class="num">1.00</td><td>Saturated — the audit detects it</td></tr>
+            <tr><td>− <code>log_momentum</code> (ablation)</td><td class="num" data-fact="ablation_auc">0.554</td><td class="num">0.54</td><td>Collapses toward the baseline</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>The audit's verdict: no label or future-window leak in the shipped features, and a detector that demonstrably fires when one is introduced.</p>
+
+      <h3>Metrics, and why precision@50 is the headline</h3>
+
+      <p>The decision is a weekly batch of fifty reviews, so the metric is the precision of the top fifty: of the fifty pages a person would open, how many actually declined? ROC-AUC and PR-AUC are reported as context, but a model can improve AUC while making the top of the queue worse, and the top of the queue is the product.</p>
+    </section>
+
+    <section id="results" aria-labelledby="results-h">
+      <h2 id="results-h"><span class="num">4</span>Results</h2>
+
+      <p class="lede">On the same client-grouped split, the model lifts precision@50 from <span data-fact="rule_p50">0.54</span> to <span data-fact="hgb_p50">0.82</span>. Almost all of that lift comes from one feature, not from model complexity — which is the least glamorous and most useful finding here.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 6.</b> Model against baseline on the identical five-seed, client-grouped split. Base rate <span data-fact="base_rate">51.5%</span>.</caption>
+          <thead>
+            <tr><th>Ranker</th><th class="num">P@10</th><th class="num">P@20</th><th class="num">P@50</th><th class="num">P@100</th><th class="num">ROC-AUC</th><th class="num">PR-AUC</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Frozen rule baseline</td><td class="num">0.60</td><td class="num">0.62</td><td class="num" data-fact="rule_p50">0.54</td><td class="num">0.556</td><td class="num" data-fact="rule_auc">0.554</td><td class="num">0.499</td></tr>
+            <tr><td>Logistic regression</td><td class="num">0.60</td><td class="num">0.69</td><td class="num" data-fact="logistic_p50">0.748</td><td class="num">0.804</td><td class="num">0.656</td><td class="num">0.611</td></tr>
+            <tr class="is-key"><td>Gradient boosting (shipped)</td><td class="num" data-fact="hgb_p10">0.84</td><td class="num" data-fact="hgb_p20">0.79</td><td class="num" data-fact="hgb_p50">0.82</td><td class="num" data-fact="hgb_p100">0.806</td><td class="num" data-fact="hgb_auc">0.643</td><td class="num" data-fact="hgb_pr">0.591</td></tr>
+            <tr><td>Gradient boosting, no momentum</td><td class="num">0.54</td><td class="num">0.54</td><td class="num" data-fact="hgb_nomom_p50">0.516</td><td class="num">0.484</td><td class="num">0.560</td><td class="num">0.497</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">P@50 for the shipped model ranges <span data-fact="hgb_p50_range">0.62–0.94</span> across the five draws; the rule baseline ranges <span data-fact="rule_p50_range">0.46–0.68</span>. The ranges overlap at their edges — five draws of nine clients is a small experiment, and the paper says so in §5 rather than hiding it in a footnote.</p>
+
+      <figure>
+        <img src="assets/fig-model-vs-baseline.png" width="1400" height="760" loading="lazy" decoding="async"
+             alt="Line chart of precision at K for K equals 10, 20, 50 and 100. The frozen rule baseline sits near 0.55, logistic regression near 0.75 at K equals 50, and gradient boosting reaches 0.82 at K equals 50 with a shaded band showing the range across five client-grouped draws. Without the momentum feature, gradient boosting falls to about 0.52.">
+        <figcaption>
+          <b>Figure 1.</b> Precision at K on the client-grouped split, five seeds. The band around the shipped model is the min–max across draws, not a confidence interval.
+          <span class="take">The gain is concentrated exactly where the decision happens: the first fifty rows. Every ranker converges by K = 100, because a hundred pages is a fifth of the frame.</span>
+        </figcaption>
+      </figure>
+
+      <h3>Where the lift comes from</h3>
+
+      <p>Two changes were made to the baseline: add the momentum feature, and allow a nonlinear model. Decomposing the lift at K = 50 shows the first change does most of the work — the frozen rule at <span data-fact="rule_p50">0.54</span>, the same logistic model with momentum at <span data-fact="logistic_p50">0.748</span>, the boosted model at <span data-fact="hgb_p50">0.82</span>. Roughly <span data-fact="feature_share">74%</span> of the total gain is attributable to the feature, and the remainder to letting the model use it nonlinearly.</p>
+
+      <p>The ablation is the sharpest single number in this paper. Remove <code>log_momentum</code> and the boosted model falls to <span data-fact="hgb_nomom_p50">0.516</span> — <em>below</em> the rule baseline it was supposed to beat. Permutation importance agrees: dropping the momentum column costs <span data-fact="perm_momentum">0.062</span> ROC-AUC, versus <span data-fact="perm_ctr">0.029</span> for the peer-relative CTR ratio and <span data-fact="perm_impressions">0.007</span> for volume. A paper that shipped only the AUC would have missed this; a paper that ships the ablation cannot pretend the model is doing something cleverer than it is.</p>
+
+      <div class="note note--claim">
+        <p class="note__label">Reading the result honestly</p>
+        <p>ROC-AUC of <span data-fact="hgb_auc">0.643</span> is a modest ranker in absolute terms. It is enough to order a review queue — precision at the top of the queue is more than half again the base rate — and it is not enough to score individual pages, predict magnitude, or support any statement about what fixing a page would recover. The gap between those two uses is the subject of §5.</p>
+      </div>
+
+      <h3>The split is the experiment</h3>
+
+      <figure>
+        <img src="assets/fig-split-before-after.png" width="1400" height="700" loading="lazy" decoding="async"
+             alt="Grouped bar chart comparing two validation designs. With a random page split, precision at 50 is 0.992 and ROC-AUC is 0.791. With clients held out, precision at 50 is 0.82 and ROC-AUC is 0.643. A dashed line marks the 0.515 base rate.">
+        <figcaption>
+          <b>Figure 2.</b> The same model and the same pages under two split designs, with the base rate marked.
+          <span class="take">A random page split does not measure generalisation to new clients; it measures memorisation of clients the model has already met. Reporting the left bar would have been the easiest mistake in this project.</span>
+        </figcaption>
+      </figure>
+
+      <h3>What the errors taught, and how they changed the product</h3>
+
+      <p>Error analysis on the held-out folds produced three findings that changed the deliverable rather than the model:</p>
+
+      <ul>
+        <li><strong>The head is one client.</strong> <span data-fact="client_concentration">96%</span> of the model's top hundred pages come from a single client, whose pages are disproportionately zero-click. That is a real pattern in the data, not a tracking failure — but a queue that is one client's backlog is not a queue. The playbook therefore interleaves clients and caps any client at 3 of the 50 weekly actions.</li>
+        <li><strong>Most "bad CTR" pages are too small to read.</strong> <span data-fact="low_expected_share">75.1%</span> of visible pages have fewer than five expected clicks at their position. Flagging those as CTR problems produces confident nonsense, so the playbook only emits a CTR reason code where the peer median predicts at least five clicks.</li>
+        <li><strong>Expensive advice needs expensive pages.</strong> An action that costs two hours is not worth spending on a page with 800 impressions. Actions above the cheap tier require a 2,000-impression floor, or the page goes to a watchlist instead.</li>
+      </ul>
+
+      <p>None of these are model changes. They are decisions about what the model's output is allowed to say — which is what turns a ranking into a product.</p>
+
+      <h3>Momentum, and what "decay" actually looks like</h3>
+
+      <p>The feature that carries the model has a clear, monotone relationship with the outcome across the whole frame, not just the head of the queue. Grouping all <span data-fact="frame_pages">101,441</span> scored pages by their March momentum band shows the decline rate rising steadily as momentum falls.</p>
+
+      <figure>
+        <img src="assets/fig-momentum-decay.png" width="1400" height="720" loading="lazy" decoding="async"
+             alt="Bar chart of observed April decline rate by March momentum band: below minus 0.70, 83.5 percent of pages declined; minus 0.70 to minus 0.35, 69.7 percent; minus 0.35 to zero, 57.7 percent; zero to 0.35, 45.2 percent; above 0.35, 31.0 percent. A dashed line marks the 51.5 percent base rate.">
+        <figcaption>
+          <b>Figure 3.</b> Observed April decline rate by March momentum band, all scored pages. n per band from 5,446 to 18,103.
+          <span class="take">Fading pages declined <span data-fact="fading_rate">76.5%</span> of the time against <span data-fact="steady_rate">41.9%</span> for steady ones; pages that were fading <em>and</em> below their peers' CTR declined <span data-fact="both_rate">83.4%</span> of the time, against <span data-fact="neither_rate">40.4%</span> for pages with neither signal.</span>
+        </figcaption>
+      </figure>
+
+      <p>This is an association in one month pair, not a lifecycle curve: a page can lose impressions because demand moved, because a competitor published, or because the site changed. The direction is consistent across every band and across both signals, which is what makes it usable as a ranking input. It is not evidence that a page which is fading will recover if refreshed — nothing in this design could show that.</p>
+    </section>
+
+    <section id="limits" aria-labelledby="limits-h">
+      <h2 id="limits-h"><span class="num">5</span>Limitations and honest framing</h2>
+
+      <p class="lede">Written before a reader could write it. Each item below narrows what the numbers above are allowed to mean.</p>
+
+      <h3>What this work cannot claim</h3>
+
+      <ul>
+        <li><strong>No causal claim.</strong> Nothing was assigned at random. No page was changed by this work. The difference between a fading page and a steady page is not an estimate of what refreshing either one would do.</li>
+        <li><strong>No uplift estimate.</strong> The queue carries a "measured click gap" — the clicks the page would have earned in March at its position tier's median CTR. That is a sizing heuristic for comparing pages, not a forecast of recovery.</li>
+        <li><strong>No revenue framing.</strong> The release contains no revenue or cost-per-click column, so nothing here ranks pages by business value. Value would need a different label.</li>
+      </ul>
+
+      <h3>What the design cannot see</h3>
+
+      <ul>
+        <li><strong>One month pair, one release.</strong> March features, April label. A different month pair could move every number; nothing here establishes stability over time. The June data exists in the release and was deliberately left sealed so that this paper could not tune against it.</li>
+        <li><strong>A 57.4% frame.</strong> Pages under 100 March impressions — 42.6% of the portfolio — are out of scope. They are also the pages where CTR is least readable, which is why they are excluded, but the exclusion removes the smallest and weakest content from the study.</li>
+        <li><strong>Survivorship in the join.</strong> <span data-fact="dropped_no_april">548</span> pages had no April row and were dropped rather than labelled "declined". Those are plausibly the most-declined pages in the portfolio, which biases the measured base rate downward.</li>
+        <li><strong>Unobserved interventions.</strong> If anyone refreshed a page in April, the label cannot tell that apart from an organic decline. This is the classic selection problem: pages chosen for work are not a random sample.</li>
+        <li><strong>What the features miss.</strong> Tracking breaks, deindexing, seasonality, competitor moves, and site-wide changes are all invisible to eight March aggregates — which is precisely why the playbook's first human check is "is this page live and indexable at all".</li>
+      </ul>
+
+      <h3>What the statistics cannot carry</h3>
+
+      <ul>
+        <li><strong>Nine clients per draw.</strong> Five seeds give a mean and a range, not a confidence interval. The shipped model's P@50 range (<span data-fact="hgb_p50_range">0.62–0.94</span>) overlaps the baseline's (<span data-fact="rule_p50_range">0.46–0.68</span>) at the edges. The mean gap is large and consistent in direction; the per-draw gap is not guaranteed to be.</li>
+        <li><strong>Momentum is partly mechanical.</strong> The label compares April with the whole of March. A page that was already falling through March is arithmetically closer to the 80% threshold than a steady page. The momentum signal is therefore a legitimate pre-decision observation but an inflated one — its measured importance is an upper bound on its standalone value.</li>
+        <li><strong>Modest rank quality.</strong> ROC-AUC <span data-fact="hgb_auc">0.643</span> supports ordering a queue. It does not support per-page probabilities, thresholds stated as risk, or any claim that page A "will" decline.</li>
+        <li><strong>A client-heavy head.</strong> <span data-fact="client_concentration">96%</span> of the top hundred rows belong to one client. The interleaving in §6 mitigates this in the product; it does not fix it in the model.</li>
+      </ul>
+
+      <div class="note note--claim">
+        <p class="note__label">The sentence this paper is allowed to end on</p>
+        <p>In one portfolio, over one month pair, eight pre-decision features ranked pages by their probability of losing search clicks the following month substantially better than a frozen rule — and the ranking is good enough to decide what a person reviews first, and not good enough to decide what happens to a page without one.</p>
+      </div>
+    </section>
+
+    <section id="playbook" aria-labelledby="playbook-h">
+      <h2 id="playbook-h"><span class="num">6</span>Ranked recommendations</h2>
+
+      <p class="lede">A ranking is not a recommendation. This section is the part a team would actually use: what the model's output is allowed to say, which page gets which action, and what must never happen without a human.</p>
+
+      <h3>From 176,738 pages to fifty actions</h3>
+
+      <figure>
+        <img src="assets/fig-frame-funnel.png" width="1400" height="640" loading="lazy" decoding="async"
+             alt="Horizontal funnel: 176,738 March pages, 101,441 scored after the impression floor, 8,395 actionable after the reason and effort gates, and 50 in the weekly batch.">
+        <figcaption>
+          <b>Figure 4.</b> The queue's funnel, with the rule that removes each stage.
+          <span class="take">Most of the shrinkage is honest filtering, not ranking: the impression floor removes the unreadable long tail, and the gates remove pages where a person's hour would buy nothing measurable.</span>
+        </figcaption>
+      </figure>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 7.</b> Every scored page lands in exactly one disposition.</caption>
+          <thead>
+            <tr><th>Disposition</th><th class="num">Pages</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr class="is-key"><td>Actionable</td><td class="num" data-fact="actionable">8,395</td><td>A reason code fired and the page is worth a person's time</td></tr>
+            <tr><td>Watchlist</td><td class="num" data-fact="watchlist">81,137</td><td>Scored, but below the effort or expected-clicks floor — no action, keep observing</td></tr>
+            <tr><td>No action</td><td class="num" data-fact="no_action">11,909</td><td>Nothing fired: steady page, adequate CTR for its position</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">Actionable is <span data-fact="actionable_share">8.3%</span> of the frame. A queue that is a third of the portfolio has not prioritised anything; a queue that is empty means the thresholds are wrong.</p>
+
+      <h3>Reason codes decide the action</h3>
+
+      <p>Each actionable page carries exactly one primary reason code — a deterministic statement about which signal fired — and the code maps to exactly one action. The model orders; the codes prescribe. That split is deliberate: a 0.64-AUC ranker earns the right to order a queue, not the right to decide what to do with a page.</p>
+
+      <div class="actions">
+        <div class="action">
+          <span class="action__code">CTR_FAR_BELOW_PEERS</span>
+          <p class="action__body"><b>3,493 pages.</b> CTR below half the peer median at the same position tier, with at least five expected clicks. → <b>Rewrite the title and snippet, then measure.</b> A page that earns half what its neighbours earn at the same rank has a visible-relevance problem before it has a content problem.</p>
+        </div>
+        <div class="action">
+          <span class="action__code">MOMENTUM_FADE</span>
+          <p class="action__body"><b>3,084 pages.</b> Impressions fell sharply through March, CTR is not the problem. → <b>Refresh the body and re-check intent.</b> Losing impressions with healthy CTR reads as weakening relevance or demand, not a packaging problem.</p>
+        </div>
+        <div class="action">
+          <span class="action__code">CTR_BELOW_PEERS</span>
+          <p class="action__body"><b>1,753 pages.</b> CTR between half and 70% of the peer median. → <b>Test a snippet change first</b>, then escalate to a body refresh if the gap survives one measurement cycle.</p>
+        </div>
+        <div class="action">
+          <span class="action__code">ZERO_CLICKS</span>
+          <p class="action__body"><b>65 pages.</b> No clicks in March where the peer median predicts at least ten. → <b>Check intent mismatch before writing anything.</b> A page that ranks and is never clicked is often answering a different question than the one it ranks for.</p>
+        </div>
+      </div>
+
+      <p>Two secondary markers travel with the code rather than replacing it: <code>LOW_EXPECTED_CLICKS</code> (the page cannot support a CTR claim) and <code>DEEP_POSITION</code> (no peer median exists, so no click gap can be sized). They tell the reviewer why a page is in the watchlist rather than in the batch.</p>
+
+      <h3>Archetype says what kind of page it is</h3>
+
+      <p>Reason codes answer "which signal fired". Archetypes answer "what kind of page is this" — three observable bands (position, volume, momentum) that an editor can hold in one sentence and that recompute from the same columns every month. The archetype sets the action's shape; the model and the codes set the order.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 8.</b> Six archetypes over the scored queue. Decline rates are the observed April outcome of that band — calibration context, not a promise.</caption>
+          <thead>
+            <tr><th>Archetype</th><th class="num">Pages</th><th class="num">Declined</th><th class="num">Click gap</th><th>What to do with it</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Page 1 / high volume</td><td class="num">8,898</td><td class="num">44.5%</td><td class="num">5.49</td><td>Protect first: snippet test, then body refresh — the largest click gap per edit</td></tr>
+            <tr><td>Page 1 / mid volume</td><td class="num">29,983</td><td class="num">49.9%</td><td class="num">0.95</td><td>Snippet test or body refresh; cheap to try, easy to measure</td></tr>
+            <tr><td>Striking / high volume</td><td class="num">1,449</td><td class="num">46.3%</td><td class="num">1.10</td><td>Refresh body and snippet; biggest single-step upside in the portfolio</td></tr>
+            <tr><td>Striking / mid volume</td><td class="num">10,387</td><td class="num">52.9%</td><td class="num">0.35</td><td>Refresh body, or internal links if the gap is not CTR-shaped</td></tr>
+            <tr><td>Deep position</td><td class="num">11,207</td><td class="num">52.3%</td><td class="num">—</td><td>Relevance and internal links first; a copy rewrite at position 40 is wasted effort</td></tr>
+            <tr><td>Thin volume</td><td class="num">39,517</td><td class="num">53.9%</td><td class="num">0.23</td><td>Watchlist only — do not spend an hour on a page with 200 impressions</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">Every band sits within a few points of the <span data-fact="base_rate">51.5%</span> base rate. Archetype is a routing decision, not a ranking: the spread is composition, not destiny. The click gap column is blank for deep positions because no peer median exists there.</p>
+
+      <h3>The weekly batch</h3>
+
+      <p>The batch is built by interleaving clients — each client's best page, then their second, and so on — rather than taking the model's global top fifty, because the global top fifty is dominated by one client. The result: <strong><span data-fact="batch_actions">50</span> actions across <span data-fact="batch_clients">25</span> clients, <span data-fact="batch_hours">118</span> hours of estimated effort, covering <span data-fact="batch_clicks">402</span> clicks of measured gap.</strong> The mix is 28 body refreshes, 20 snippet refreshes, and 2 snippet tests.</p>
+
+      <p>Effort is estimated from the action type, not from a stopwatch: a snippet rewrite is cheap, a body refresh is not, and a page that cannot justify the second is a watchlist entry. This is the difference between a ranked list and a plan — the plan has a budget.</p>
+
+      <h3>The review gate, and what must never be automated</h3>
+
+      <p>Every row exports with <code>auto_apply_allowed = False</code>. Before an action is worked, a person confirms four things the data cannot: the page is live and indexable, its tracking is intact, the search intent still matches the page's purpose, and the reason code agrees with what they see. If any check fails, the row is closed as "not this kind of problem" — that outcome is a successful review, not a wasted one.</p>
+
+      <ul class="nogo">
+        <li>Publishing a content or title change from the queue without review.</li>
+        <li>Deleting, redirecting, canonicalising, noindexing, or changing URLs.</li>
+        <li>Bulk rewrites — the queue is a review order, not a work order.</li>
+        <li>Any action on a page below the 500-impression floor.</li>
+        <li>Acting when the primary and secondary codes conflict; send it back to a human.</li>
+        <li>Client-facing claims that traffic was "recovered" — this design cannot measure that.</li>
+        <li>Refitting on the outcome month to sharpen that month's queue.</li>
+        <li>Ranking by revenue or cost-per-click — neither column exists in the release.</li>
+        <li>Refresh → rescore → refresh loops with no human between the steps.</li>
+      </ul>
+
+      <h3>Monitoring and retrain triggers</h3>
+
+      <p>The playbook is only honest if it says when it stops being valid. Six measurements are checked monthly against the bands below; crossing a band is a review trigger, not an automatic retrain.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption><b>Table 9.</b> The monitoring contract. Current values are from the March–April build.</caption>
+          <thead>
+            <tr><th>Metric</th><th class="num">Current</th><th>Watch band</th><th>What a breach means</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Monthly decline base rate</td><td class="num">51.5%</td><td>0.45 – 0.58</td><td>The label's prevalence moved; every precision number changes with it</td></tr>
+            <tr><td>Share of visible pages fading (momentum ≤ −0.35)</td><td class="num">21.9%</td><td>±25% relative</td><td>The feature the model depends on moved — check tracking before retraining</td></tr>
+            <tr><td>Median CTR ratio, visible pages</td><td class="num">1.199</td><td>±20% relative</td><td>Peer medians are recomputed monthly; a shift re-bases every CTR code</td></tr>
+            <tr><td>Top-100 client concentration</td><td class="num">96%</td><td>&lt; 40%</td><td>The head is one client's backlog; the ranking is not transferable</td></tr>
+            <tr><td>Actionable share of the queue</td><td class="num">8.3%</td><td>5% – 25%</td><td>Too high: no prioritisation. Too low: thresholds too strict</td></tr>
+            <tr><td>Mean P@50 on grouped holdouts</td><td class="num">0.82</td><td>≥ 0.65</td><td>The only out-of-sample quality number the playbook has</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>Retrain when</strong> the base rate leaves its band, the fading share moves more than a quarter in relative terms, or the held-out P@50 falls below 0.65 on a fresh month pair. <strong>Do not retrain</strong> because a single week's queue looks odd — with nine clients per draw, week-to-week variation is expected, and refitting to make one week look better is how a queue stops being a measurement.</p>
+    </section>
+
+    <section id="repro" aria-labelledby="repro-h">
+      <h2 id="repro-h"><span class="num">7</span>Reproducibility</h2>
+
+      <p class="lede">Everything on this page is regenerated from committed files. The numbers are not typed into the HTML — they are checked against the receipts, and the check fails loudly if they drift.</p>
+
+      <p>The work lives in <a href="https://github.com/Louai-Mohamed/flyrank-ml-internship/tree/main/work">work/</a>. Seven notebooks build it in order, each one executed top to bottom and committed with its outputs visible.</p>
+
+      <ul class="repro">
+        <li><span class="f">work/notebooks/w01_research_question.ipynb</span><span class="d">The question and the decision it supports</span></li>
+        <li><span class="f">work/notebooks/w02_ml_task_framing.ipynb</span><span class="d">Lane choice, unit of analysis, label and success criteria</span></li>
+        <li><span class="f">work/notebooks/w03_data_contract.ipynb</span><span class="d">Tables, grain, windows, row counts, the data contract</span></li>
+        <li><span class="f">work/notebooks/w04_baseline_score.ipynb</span><span class="d">Signal audit with verdicts, the frozen rule baseline, the first queue</span></li>
+        <li><span class="f">work/notebooks/w05_model.ipynb</span><span class="d">Feature set, grouped split, model comparison, gain decomposition</span></li>
+        <li><span class="f">work/notebooks/w06_validation_audit.ipynb</span><span class="d">Split audit, leakage injection test, paper-claim audit</span></li>
+        <li><span class="f">work/notebooks/w07_action_playbook.ipynb</span><span class="d">Reason codes, gates, archetypes, weekly batch, review gate</span></li>
+        <li><span class="f">work/notebooks/capstone.ipynb</span><span class="d">This paper: figures regenerated, every quoted number audited against the receipts</span></li>
+      </ul>
+
+      <h3>Receipts, seeds, and how to rerun</h3>
+
+      <p>Every figure and number traces to one of four JSON receipts committed next to the notebooks: <code>w04_baseline_metrics.json</code>, <code>w05_model_metrics.json</code>, <code>w06_validation_audit.json</code>, <code>w07_playbook_summary.json</code>. The capstone notebook reads those four files, regenerates the figures in <code>docs/assets/</code>, writes <code>docs/assets/paper-facts.json</code>, and then asserts that every value on this page marked as a fact matches the receipt it came from.</p>
+
+<pre><code>git clone https://github.com/Louai-Mohamed/flyrank-ml-internship
+cd flyrank-ml-internship
+python -m venv .venv &amp;&amp; source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt pandas scikit-learn matplotlib duckdb
+
+# the paper: no warehouse access needed, reads committed receipts
+jupyter notebook work/notebooks/capstone.ipynb
+
+# the analysis: needs a read token for the gated Hugging Face release
+export HF_TOKEN=...                                 # then run w03 → w07 in order
+</code></pre>
+
+      <p>Randomness is pinned: the split uses <code>GroupShuffleSplit</code> grouped on <code>client_hash_id</code> with seeds 42, 7, 2024, 101, and 555, and the notebooks cap thread pools to one so the numbers do not depend on machine parallelism. Environment for the recorded run: Python 3.12, scikit-learn 1.9.1, pandas, DuckDB 2.0.0, Matplotlib 3.11.2.</p>
+
+      <p>The queue itself is a 40 MB CSV and is deliberately <strong>not</strong> committed — the repository's leak guard blocks data files, and the notebook regenerates it. The receipts, the figures, and the code are enough to rebuild every claim on this page.</p>
+
+      <div class="note note--ok">
+        <p class="note__label">Try to break it</p>
+        <p>The strongest check in the repository is not the model: it is <code>capstone.ipynb</code> re-reading the HTML, parsing every <code>data-fact</code> marker, and failing if a number on this page disagrees with the receipt that produced it. If you find a number here that the receipts cannot support, that check is the bug.</p>
+      </div>
+    </section>
+
+    <footer>
+      <section id="credit" aria-labelledby="credit-h">
+        <h2 id="credit-h">Acknowledgments &amp; data credit</h2>
+        <p class="credit">Built on the <a href="https://flyrank.ai">FlyRank ML Internship dataset</a> — a pseudonymized production search warehouse released for this program. Thank you to FlyRank for making real search data available to interns under a public-safe release, and for the research material that framed the original problem.</p>
+        <p>Credit also to the open-source stack this work stands on: scikit-learn for the models and the grouped split, DuckDB and pandas for the query layer, and Matplotlib for every figure on this page. The analysis, the mistakes in it, and the conclusions drawn from it are the author's alone.</p>
+        <p>The release is pseudonymized before it leaves FlyRank: clients appear only as hashed identifiers, and no domains, URLs, titles, or query text are included. Nothing in this paper identifies a client, a site, or a search query — by design, not by redaction.</p>
+      </section>
+
+      <section aria-labelledby="refs-h">
+        <h2 id="refs-h">References</h2>
+        <ol class="refs">
+          <li><span class="n">1</span><span>FlyRank. <em>SEO research, March 2026</em> — the analysis this study's framing builds on. <a href="https://github.com/Louai-Mohamed/flyrank-ml-internship/blob/main/docs/flyrank-seo-research-march-2026.pdf">PDF in repository</a>.</span></li>
+          <li><span class="n">2</span><span>FlyRank. <em>ML internship dataset and lane guide</em> — release <code>v20260703</code>, table grain, row counts, date windows. <a href="https://github.com/Louai-Mohamed/flyrank-ml-internship/blob/main/docs/ml-intern-dataset-and-lane-guide.md">Guide in repository</a>.</span></li>
+          <li><span class="n">3</span><span>Roberts, D. R. et al. (2017). <em>Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure.</em> Ecography 40: 913–929. The reason a random page split is the wrong test here.</span></li>
+          <li><span class="n">4</span><span>Pedregosa, F. et al. (2011). <em>Scikit-learn: Machine learning in Python.</em> JMLR 12: 2825–2830. <a href="https://scikit-learn.org/stable/modules/ensemble.html#histogram-based-gradient-boosting">Histogram-based gradient boosting</a>.</span></li>
+        </ol>
+      </section>
+
+      <div class="foot-meta">
+        <span>© 2026 Louai Mohamed</span>
+        <span aria-hidden="true">·</span>
+        <span>Text and figures licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></span>
+        <span aria-hidden="true">·</span>
+        <span>Last updated <time datetime="2026-11-10">10 November 2026</time></span>
+        <span aria-hidden="true">·</span>
+        <a href="#abstract">Back to top ↑</a>
+      </div>
+    </footer>
+  </article>
+</div>
+
+<div class="tools">
+  <button class="btn" id="cite-btn" type="button" aria-label="Copy the BibTeX citation">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.5"/><path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H4A1.5 1.5 0 0 0 2.5 3v6A1.5 1.5 0 0 0 4 10.5h.5"/></svg>
+    <span id="cite-label">Cite</span>
+  </button>
+  <button class="btn" id="theme-btn" type="button" aria-label="Switch to dark theme" aria-pressed="false">
+    <svg id="theme-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="3.2"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1"/></svg>
+    <span id="theme-label">Theme</span>
+  </button>
+</div>
+<p id="copy-status" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></p>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.documentElement;
+  var STORE = "flyrank-paper-theme";
+
+  /* ── theme: system default, explicit choice persists ── */
+  function apply(theme, announce) {
+    root.setAttribute("data-theme", theme);
+    var btn = document.getElementById("theme-btn");
+    var dark = theme === "dark";
+    btn.setAttribute("aria-pressed", String(dark));
+    btn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    document.getElementById("theme-label").textContent = dark ? "Light" : "Dark";
+    document.getElementById("theme-icon").innerHTML = dark
+      ? '<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.8 5.8 0 1 0 6.8 6.8Z"/>'
+      : '<circle cx="8" cy="8" r="3.2"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1"/>';
+    if (announce) {
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) { meta = document.createElement("meta"); meta.name = "theme-color"; document.head.appendChild(meta); }
+      meta.content = dark ? "#131417" : "#fbfaf7";
+    }
+  }
+  var stored = null;
+  try { stored = localStorage.getItem(STORE); } catch (e) {}
+  var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  apply(stored || (prefersDark ? "dark" : "light"), false);
+  document.getElementById("theme-btn").addEventListener("click", function () {
+    var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    apply(next, true);
+    try { localStorage.setItem(STORE, next); } catch (e) {}
+  });
+
+  /* ── contents: mark the section being read ── */
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var targets = links.map(function (a) { return document.querySelector(a.getAttribute("href")); }).filter(Boolean);
+  if ("IntersectionObserver" in window && targets.length) {
+    var visible = new Map();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { visible.set(e.target.id, e.isIntersecting ? e.intersectionRatio : 0); });
+      var best = null, bestRatio = 0;
+      visible.forEach(function (r, id) { if (r > bestRatio) { bestRatio = r; best = id; } });
+      if (best) {
+        links.forEach(function (a) {
+          a.classList.toggle("is-current", a.getAttribute("href") === "#" + best);
+        });
+      }
+    }, { rootMargin: "-20% 0px -55% 0px", threshold: [0, 0.15, 0.4, 0.75, 1] });
+    targets.forEach(function (t) { io.observe(t); });
+  }
+
+  /* ── citation ── */
+  var CITE = "@misc{mohamed2026queue,\n" +
+    "  title  = {Which pages should you review first? An early-warning queue for organic click decline},\n" +
+    "  author = {Mohamed, Louai},\n" +
+    "  year   = {2026},\n" +
+    "  note   = {FlyRank ML Internship. Built on the FlyRank ML Internship dataset.},\n" +
+    "  url    = {https://louai-mohamed.github.io/flyrank-ml-internship/}\n" +
+    "}";
+  var citeBtn = document.getElementById("cite-btn");
+  var citeLabel = document.getElementById("cite-label");
+  var status = document.getElementById("copy-status");
+  var resetTimer = null;
+
+  function flash(state, text, announce) {
+    citeBtn.setAttribute("data-state", state);
+    citeLabel.textContent = text;
+    status.textContent = announce;
+    if (resetTimer) { clearTimeout(resetTimer); }
+    resetTimer = setTimeout(function () {
+      citeBtn.removeAttribute("data-state");
+      citeLabel.textContent = "Cite";
+    }, 2400);
+  }
+
+  citeBtn.addEventListener("click", function () {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = CITE;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      if (ok) { flash("done", "Copied", "BibTeX citation copied to the clipboard."); }
+      else { flash("error", "Select", "Copy failed — the citation is in the page source."); }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(CITE).then(function () {
+        flash("done", "Copied", "BibTeX citation copied to the clipboard.");
+      }).catch(fallback);
+    } else { fallback(); }
+  });
+
+  /* ── mobile contents closes after a jump ── */
+  var mobile = document.querySelector(".contents-mobile");
+  if (mobile) {
+    mobile.addEventListener("click", function (e) {
+      if (e.target.tagName === "A") { mobile.open = false; }
+    });
+  }
+})();
+</script>
+</body>
+</html>
+
