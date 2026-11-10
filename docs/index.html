@@ -96,7 +96,7 @@ a:hover{color:var(--accent-2);border-bottom-color:var(--accent-2)}
 a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
 strong,b{font-weight:600}
 em{font-style:italic}
-code,kbd,samp{font-family:var(--font-mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius-sm);padding:.08em .34em}
+code,kbd,samp{font-family:var(--font-mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius-sm);padding:.08em .34em;overflow-wrap:anywhere}
 hr{border:0;border-top:1px solid var(--rule);margin:var(--space-7) 0}
 ::selection{background:color-mix(in srgb,var(--accent) 22%,transparent)}
 
@@ -357,7 +357,7 @@ pre{
   background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius-md);
   padding:var(--space-4);overflow-x:auto;margin:var(--space-4) 0;max-width:100%;
 }
-pre code{background:none;border:0;padding:0;font-size:inherit}
+pre code{background:none;border:0;padding:0;font-size:inherit;overflow-wrap:normal}
 
 /* ══════════════════════════════════════════════════════════════════
    Footer
