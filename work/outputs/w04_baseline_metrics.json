@@ -1,0 +1,67 @@
+{
+  "notebook": "w04_baseline_score.ipynb",
+  "lane": "Lane 4 - CTR / Engagement Opportunity Scoring (locked in this notebook)",
+  "decision_moment": "2026-03-31",
+  "feature_window": "2026-03-01..2026-03-31",
+  "label_window": "2026-04-01..2026-04-30 (forward, mid-panel; June sealed)",
+  "frame": {
+    "pages": 101441,
+    "evaluable": 100893,
+    "clients": 43,
+    "queue_clients": 44,
+    "base_rate": 0.5148,
+    "dropped_no_april_row": 548
+  },
+  "signals": {
+    "ctr_vs_position_peers": {
+      "verdict": "CONFIRMED",
+      "spread": 0.212,
+      "n_visible": 76131
+    },
+    "content_age_staleness_proxy": {
+      "verdict": "MIXED",
+      "fresh_decline": 0.421,
+      "oldest_bucket_decline": 0.499
+    },
+    "volume_quick_win": {
+      "verdict": "OPPOSITE",
+      "small_bucket_decline": 0.535,
+      "large_bucket_decline": 0.445
+    }
+  },
+  "rule": {
+    "score": "3*ctr_points + 2*persistent; ctr_points in {0,1,3}; tie-break clicks_lost then impressions",
+    "max_score": 11,
+    "reason_codes": [
+      "ctr_below_peers",
+      "ctr_far_below_peers",
+      "monitor_only",
+      "stale_visible",
+      "zero_clicks_visible"
+    ],
+    "actions": [
+      "fix_ctr",
+      "monitor",
+      "refresh"
+    ],
+    "age_weight": 0
+  },
+  "metrics": {
+    "precision_at": {
+      "10": 0.8,
+      "20": 0.8,
+      "50": 0.74,
+      "100": 0.67,
+      "200": 0.71,
+      "500": 0.68
+    },
+    "lift_at_50": 1.44,
+    "roc_auc": 0.581
+  },
+  "queue_file": {
+    "path": "work/outputs/baseline_action_score.csv",
+    "rows": 101441,
+    "columns": 16,
+    "gitignored": true
+  }
+}
