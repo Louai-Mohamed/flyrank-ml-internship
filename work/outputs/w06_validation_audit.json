@@ -1,0 +1,94 @@
+{
+  "notebook": "w06_validation_audit.ipynb",
+  "lane": "Lane 4 - CTR / Engagement Opportunity Scoring",
+  "decision_moment": "2026-03-31",
+  "frame": {
+    "march_pages_total": 176738,
+    "kept_by_100_impression_filter": 101441,
+    "frame_pages": 100893,
+    "clients": 43,
+    "base_rate": 0.5148,
+    "dropped_by_april_join": 548,
+    "clients_without_april": 1
+  },
+  "split_comparison": {
+    "design_before": "random page split, stratified on the label, 80/20",
+    "design_after": "grouped by client_hash_id, GroupShuffleSplit, test 20% of clients, 80/20",
+    "seeds": [
+      42,
+      7,
+      2024,
+      101,
+      555
+    ],
+    "sibling_share_in_test": {
+      "random_page": 1.0,
+      "grouped_client": 0.0
+    },
+    "label_icc_across_clients": 0.1327,
+    "before": {
+      "P@10": 1.0,
+      "P@20": 1.0,
+      "P@50": 0.992,
+      "P@100": 0.988,
+      "AUC": 0.791,
+      "PR-AUC": 0.798,
+      "rule_P@50": 0.664
+    },
+    "after": {
+      "P@10": 0.84,
+      "P@20": 0.79,
+      "P@50": 0.82,
+      "P@100": 0.806,
+      "AUC": 0.643,
+      "PR-AUC": 0.591,
+      "rule_P@50": 0.54
+    },
+    "after_p_at_50_range": [
+      0.62,
+      0.94
+    ],
+    "ablation_no_momentum_p_at_50_after": 0.516
+  },
+  "leakage": {
+    "feature_query_touches_april": false,
+    "product_flag_columns_present": [],
+    "injection": {
+      "shipped features": {
+        "AUC": 0.617,
+        "P@50": 0.62
+      },
+      "+ imp_apr (the label's own ingredient)": {
+        "AUC": 0.999,
+        "P@50": 1.0
+      },
+      "+ april_ratio (near-label)": {
+        "AUC": 1.0,
+        "P@50": 1.0
+      },
+      "- log_momentum (ablation)": {
+        "AUC": 0.554,
+        "P@50": 0.54
+      }
+    },
+    "verdict": "no label or future-window leak found; injection saturates near 1.0 as expected"
+  },
+  "paper_audit": {
+    "finding_2": {
+      "title": "The Content Performance Curve (p.7)",
+      "outcome": "FlyRank health score = 30 impressions + 30 position + 20 CTR + 20 scroll",
+      "question": "cross-section of different pages, not a within-page lifecycle; 365+ bucket is a survivor sample"
+    },
+    "finding_4": {
+      "title": "The Freshness Multiplier (p.9)",
+      "outcome": "current health score and impressions, treatment = refreshed within 30 days",
+      "question": "no matched control for selection into refresh; 30-day treatment window overlaps the 30-day measurement window"
+    }
+  },
+  "limitations": [
+    "the frame is 57% of March pages (>=100 impressions); the long tail is out of scope",
+    "nine clients per held-out draw, so the mean across five seeds is the headline, not one draw",
+    "the label compares April with all of March, so within-March momentum is partly mechanical",
+    "the population is one month pair; nothing here is causal or repeats over time"
+  ]
+}
