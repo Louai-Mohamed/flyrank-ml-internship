@@ -1,0 +1,232 @@
+{
+  "artifact": "ML-10 content action playbook",
+  "lane": "Lane 4 - CTR / engagement opportunity scoring",
+  "decision_moment": "2026-03-31",
+  "label_window": "2026-04 (April impressions < 80% of March)",
+  "frame": {
+    "march_pages_in_release": 176738,
+    "pages_described_by_features": 101441,
+    "labelled_rows_used_for_refit": 100893,
+    "scored_but_never_validated": 548,
+    "clients_in_queue": 44,
+    "clients_in_label": 43,
+    "share_of_march_pages_covered": 0.574,
+    "observed_decline_base_rate": 0.5148
+  },
+  "thresholds": {
+    "volume_floor_impressions": 500,
+    "momentum_cut_log_ratio": -0.35,
+    "ctr_gap_cut_ratio": 0.7,
+    "ctr_severe_cut_ratio": 0.5,
+    "min_expected_clicks": 5,
+    "effort_floor_impressions": 2000,
+    "cap_per_client_per_week": 10,
+    "weekly_batch_size": 50,
+    "no_age_trigger": true
+  },
+  "dispositions": {
+    "watchlist": 81137,
+    "no_action": 11909,
+    "actionable": 8395
+  },
+  "actionable_share_of_queue": 0.0828,
+  "reason_mix_actionable": {
+    "CTR_FAR_BELOW_PEERS": 3493,
+    "MOMENTUM_FADE": 3084,
+    "CTR_BELOW_PEERS": 1753,
+    "ZERO_CLICKS": 65
+  },
+  "archetypes": {
+    "page 1 / high volume": {
+      "pages": 8898,
+      "share_of_queue": 0.088,
+      "fading_share": 0.1524,
+      "observed_decline_rate": 0.445,
+      "mean_click_gap": 5.49,
+      "share_sized": 1.0,
+      "mapped_action": "Protect first: snippet test, then body refresh. Highest click gap per edit."
+    },
+    "page 1 / mid volume": {
+      "pages": 29983,
+      "share_of_queue": 0.296,
+      "fading_share": 0.2263,
+      "observed_decline_rate": 0.4993,
+      "mean_click_gap": 0.95,
+      "share_sized": 1.0,
+      "mapped_action": "Snippet test or body refresh; cheap to try, easy to measure."
+    },
+    "striking / high volume": {
+      "pages": 1449,
+      "share_of_queue": 0.014,
+      "fading_share": 0.2091,
+      "observed_decline_rate": 0.4627,
+      "mean_click_gap": 1.1,
+      "share_sized": 1.0,
+      "mapped_action": "Refresh body + snippet; the biggest single-step upside in the portfolio."
+    },
+    "striking / mid volume": {
+      "pages": 10387,
+      "share_of_queue": 0.102,
+      "fading_share": 0.2587,
+      "observed_decline_rate": 0.529,
+      "mean_click_gap": 0.35,
+      "share_sized": 1.0,
+      "mapped_action": "Refresh body, or internal links if the gap is not CTR-shaped."
+    },
+    "deep position": {
+      "pages": 11207,
+      "share_of_queue": 0.11,
+      "fading_share": 0.3111,
+      "observed_decline_rate": 0.5231,
+      "mean_click_gap": null,
+      "share_sized": 0.0,
+      "mapped_action": "Relevance and internal links first. A copy rewrite at position 40 is wasted effort."
+    },
+    "thin volume": {
+      "pages": 39517,
+      "share_of_queue": 0.39,
+      "fading_share": 0.2774,
+      "observed_decline_rate": 0.5385,
+      "mean_click_gap": 0.23,
+      "share_sized": 0.6541,
+      "mapped_action": "Watchlist only. Do not spend an hour on a page with 200 impressions."
+    }
+  },
+  "decay_evidence": {
+    "fading_pages": 11075,
+    "fading_decline_rate": 0.7651,
+    "steady_pages": 39578,
+    "steady_decline_rate": 0.4192,
+    "difference": 0.346,
+    "both_signals_pages": 1364,
+    "both_signals_decline_rate": 0.8336,
+    "neither_signal_pages": 35632,
+    "neither_signal_decline_rate": 0.404,
+    "by_momentum_band": {
+      "falling hard (<-0.70)": {
+        "pages": 5446,
+        "observed_decline_rate": 0.8353
+      },
+      "falling (-0.70..-0.35)": {
+        "pages": 5629,
+        "observed_decline_rate": 0.6973
+      },
+      "soft (-0.35..0)": {
+        "pages": 10183,
+        "observed_decline_rate": 0.5772
+      },
+      "steady (0..0.35)": {
+        "pages": 11292,
+        "observed_decline_rate": 0.4522
+      },
+      "rising (>0.35)": {
+        "pages": 18103,
+        "observed_decline_rate": 0.3097
+      }
+    },
+    "note": "one month pair; observed association, not a treatment effect; age is not used as a trigger"
+  },
+  "holdout_quality": {
+    "source": [
+      "work/outputs/w05_model_metrics.json",
+      "work/outputs/w06_validation_audit.json"
+    ],
+    "design": "GroupShuffleSplit by client_hash_id, 20% of clients held out, seeds 42/7/2024/101/555",
+    "hgb_precision_at_50_mean": 0.82,
+    "hgb_precision_at_50_min": 0.62,
+    "hgb_precision_at_50_max": 0.94,
+    "hgb_roc_auc_grouped": 0.643,
+    "frozen_rule_precision_at_50": 0.54,
+    "hgb_without_log_momentum_precision_at_50": 0.516,
+    "note": "out-of-sample only; the in-sample refit in this notebook produces no precision number"
+  },
+  "weekly_batch": {
+    "actions": 50,
+    "clients": 25,
+    "hours": 118.0,
+    "measured_click_gap": 402.2,
+    "action_mix": {
+      "REFRESH_BODY": 28,
+      "REFRESH_SNIPPET": 20,
+      "SNIPPET_REWRITE": 2
+    }
+  },
+  "monitoring": [
+    {
+      "metric": "monthly decline base rate",
+      "current": 0.515,
+      "watch band": "0.45 - 0.58",
+      "what it means": "the label's prevalence; a shift changes every precision number"
+    },
+    {
+      "metric": "share of visible pages fading (momentum <= -0.35)",
+      "current": 0.219,
+      "watch band": "+/- 25% relative",
+      "what it means": "the feature that carries the model; a tracking change would move it"
+    },
+    {
+      "metric": "median CTR ratio, visible pages",
+      "current": 1.199,
+      "watch band": "+/- 20% relative",
+      "what it means": "peer medians are recomputed from this population every month"
+    },
+    {
+      "metric": "top-100 client concentration",
+      "current": 0.96,
+      "watch band": "< 0.40",
+      "what it means": "one client dominating the head means the ranking is not transferable"
+    },
+    {
+      "metric": "largest single reason share",
+      "current": 0.416,
+      "watch band": "< 0.85",
+      "what it means": "momentum is expected to dominate after the CTR gate; a CTR code taking over means the peer medians moved"
+    },
+    {
+      "metric": "queue rows with no April label",
+      "current": 0.0054,
+      "watch band": "< 0.02",
+      "what it means": "scored but never validated; a rising share means the label join is breaking"
+    },
+    {
+      "metric": "actionable share of the queue",
+      "current": 0.083,
+      "watch band": "0.05 - 0.25",
+      "what it means": "too high and the queue is not prioritising; too low and the thresholds are too strict"
+    },
+    {
+      "metric": "share of visible pages below 5 expected clicks",
+      "current": 0.751,
+      "watch band": "informational",
+      "what it means": "a rising share means the queue is drifting toward CTRs too small to read"
+    },
+    {
+      "metric": "mean P@50 on grouped holdouts",
+      "current": 0.82,
+      "watch band": ">= 0.65",
+      "what it means": "the only out-of-sample quality number this playbook has"
+    }
+  ],
+  "no_go": [
+    "publishing a content or title change",
+    "delete, redirect, canonical, noindex or URL changes",
+    "bulk rewrites from the queue",
+    "any action below the 500-impression floor",
+    "acting when the reason codes conflict",
+    "client-facing claims of recovered traffic",
+    "refitting on the outcome month to sharpen that month's queue",
+    "ranking by revenue or CPC (neither column exists)",
+    "refresh -> rescore -> refresh loops without a human in between"
+  ],
+  "exports": {
+    "queue_csv": "work/outputs/action_queue.csv",
+    "summary_json": "work/outputs/w07_playbook_summary.json",
+    "figures": [
+      "work/figures/playbook_value_and_cost.png",
+      "work/figures/playbook_reason_mix.png",
+      "work/figures/playbook_archetype_outcome.png",
+      "work/figures/playbook_momentum_decay.png"
+    ],
+    "queue_csv_in_git": false
+  }
+}
